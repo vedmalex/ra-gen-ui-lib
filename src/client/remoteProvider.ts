@@ -12,7 +12,7 @@ import {
   DeleteManyParams,
   CreateParams,
 } from './params'
-import * as omitDeep from 'omit-deep'
+import omitDeep from 'omit-deep'
 import { ResourceConfig, UploadFile, getImageSize } from './dataProviderV3'
 
 const emptyListResult = {

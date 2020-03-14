@@ -18,9 +18,10 @@ export default (persistence: firebase.auth.Auth.Persistence) => ({
     //.then(token => localStorage.setItem('token', token));
   },
   logout: () => {
-    localStorage.removeItem('token')
-    firebase.auth().signOut()
-    return Promise.resolve()
+    firebaseLoaded().then(() => {
+      firebase.auth().signOut()
+      return Promise.resolve()
+    })
   },
   checkAuth: () =>
     firebaseLoaded().then(() => {
@@ -35,10 +36,12 @@ export default (persistence: firebase.auth.Auth.Persistence) => ({
   checkError: (error: { code: string; message: string }) =>
     Promise.resolve(error.message),
   getPermissions: () =>
-    firebase.auth().currentUser
-      ? firebase
-          .auth()
-          .currentUser.getIdTokenResult()
-          .then((result) => result.claims)
-      : Promise.reject(),
+    firebaseLoaded().then(() =>
+      firebase.auth().currentUser
+        ? firebase
+            .auth()
+            .currentUser.getIdTokenResult()
+            .then((result) => result.claims)
+        : Promise.reject(),
+    ),
 })

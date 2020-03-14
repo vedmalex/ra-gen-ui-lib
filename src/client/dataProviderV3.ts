@@ -11,8 +11,8 @@ import {
   UpdateParams,
   UpdateManyParam,
 } from './params'
-import * as sortBy from 'sort-by'
-import * as debug from 'debug'
+import sortBy from 'sort-by'
+import debug from 'debug'
 import { sliceArray, filterQuery, makeFilter } from './filter'
 import { getDiffObject } from './diffObject'
 

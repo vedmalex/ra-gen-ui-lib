@@ -1,11 +1,17 @@
 import dataProviderFirebaseAdmin from './dataProviderFirebaseAdmin'
 import apolloLodashGrapqhQLPlugin from './lodash'
-import * as fireBaseAdminSchema from './admin'
+import {
+  adminClient,
+  typeDefs as firebaseAdminTypeDef,
+  resolvers as firebaseAdminResolvers,
+} from './admin'
 import fireBaseAdminHandler from './admin'
 
 export {
   apolloLodashGrapqhQLPlugin as ApolloLodashGrapqhQLPlugin,
   dataProviderFirebaseAdmin,
-  fireBaseAdminSchema,
+  adminClient,
+  firebaseAdminTypeDef,
+  firebaseAdminResolvers,
   fireBaseAdminHandler,
 }
