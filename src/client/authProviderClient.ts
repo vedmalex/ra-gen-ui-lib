@@ -15,26 +15,18 @@ export default (persistence: firebase.auth.Auth.Persistence) => ({
         firebase.auth().signInWithEmailAndPassword(username, password),
       )
       .then((c) => c.user.getIdToken())
-    //.then(token => localStorage.setItem('token', token));
   },
-  logout: () => {
-    firebaseLoaded().then(() => {
-      firebase.auth().signOut()
-      return Promise.resolve()
-    })
-  },
+  logout: () => firebaseLoaded().then(() => firebase.auth().signOut()),
   checkAuth: () =>
     firebaseLoaded().then(() => {
       if (firebase.auth().currentUser) {
         return firebase.auth().currentUser.reload()
-        //.then(_ => firebase.auth().currentUser.getIdToken());
-        //.then(token => localStorage.setItem('token', token));
       } else {
-        return Promise.reject()
+        return Promise.reject({ redirectTo: '/login' })
       }
     }),
   checkError: (error: { code: string; message: string }) =>
-    Promise.resolve(error.message),
+    Promise.reject(error),
   getPermissions: () =>
     firebaseLoaded().then(() =>
       firebase.auth().currentUser
