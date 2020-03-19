@@ -10,7 +10,7 @@ module.exports = {
   clearMocks: true,
   globals: {
     'ts-jest': {
-      tsConfig: '<rootDir>/src/__tests__/tsconfig.json',
+      tsConfig: '<rootDir>/tsconfig.json',
       diagnostics: false,
     },
   },

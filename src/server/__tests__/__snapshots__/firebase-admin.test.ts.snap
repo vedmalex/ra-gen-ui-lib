@@ -1,0 +1,140 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`firebase schema ID: ID 1`] = `
+"scalar ID
+"
+`;
+
+exports[`firebase schema schema: overall schema 1`] = `
+"scalar ID
+
+scalar UID
+
+scalar Date
+
+scalar Url
+
+scalar Token
+
+scalar JSON
+
+scalar JSONObject
+
+enum Acl {
+  AUTHENTICATED
+  ADMIN
+}
+
+directive @acl(level: [Acl] = [AUTHENTICATED]) on OBJECT | FIELD_DEFINITION
+
+directive @storage(identity: Boolean, indexed: Boolean, calculated: Boolean) on FIELD_DEFINITION
+
+enum RelationType {
+  BTM
+  BTO
+  HM
+  HO
+}
+
+directive @entry(calculated: Boolean) on OBJECT
+
+directive @relation(type: RelationType, to: String, from: String, using: String) on FIELD_DEFINITION
+
+directive @UI(title: String, titlePlural: String, hint: String, generalTab: String, listName: String, list: Boolean, edit: Boolean) on OBJECT | FIELD_DEFINITION
+
+type UserClaim {
+  admin: Boolean
+  student: Boolean
+  capitan: Boolean
+  curator: Boolean
+  owner: Boolean
+}
+
+input UserClaimInput {
+  admin: Boolean
+  student: Boolean
+  capitan: Boolean
+  curator: Boolean
+  owner: Boolean
+}
+
+type FireBaseUserInfo {
+  displayName: String
+  email: String
+  phoneNumber: String
+  photoURL: Url
+  providerId: ID
+  uid: UID
+}
+
+type FireBaseUserMetadata {
+  creationTime: String
+  lastSignInTime: String
+}
+
+type FireBaseUser {
+  displayName: String
+  email: String
+  phoneNumber: String
+  photoURL: Url
+  providerId: ID
+  emailVerified: Boolean
+  isAnonymous: Boolean @storage(calculated: true)
+  metadata: FireBaseUserMetadata
+  providerData: [FireBaseUserInfo]
+  refreshToken: String
+  tenantId: String
+  uid: UID
+  options: UserClaim
+}
+
+input FirebaseUserCreate {
+  uid: UID
+  email: String!
+  emailVerified: Boolean
+  phoneNumber: String
+  password: String!
+  displayName: String
+  photoURL: Url
+  disabled: Boolean
+  claims: UserClaimInput
+}
+
+input FirebaseUserUpdate {
+  email: String!
+  emailVerified: Boolean
+  phoneNumber: String
+  password: String!
+  displayName: String
+  photoURL: Url
+  disabled: Boolean
+  claims: UserClaimInput
+}
+
+type AppUserList {
+  users: [FireBaseUser]
+  pageToken: String
+}
+
+type Query {
+  getAppUser(uid: UID): FireBaseUser @acl(level: ADMIN)
+  getAppUsers(limit: Int, pageToken: String): AppUserList @acl(level: ADMIN)
+}
+
+type LoginResult {
+  token: Token!
+  refreshToken: Token!
+  uid: ID!
+  options: UserClaim
+}
+
+type Mutation {
+  login(username: String, password: String): LoginResult
+  refreshToken(token: Token): LoginResult
+  verifyToken(token: Token, refreshToken: Token, checkRevoked: Boolean): UserClaim
+  deleteAppUser(uid: UID): Boolean @acl(level: ADMIN)
+  createAppUser(user: FirebaseUserCreate): FireBaseUser @acl(level: ADMIN)
+  updateAppUser(uid: UID, user: FirebaseUserUpdate): FireBaseUser @acl(level: ADMIN)
+}
+"
+`;

@@ -10,8 +10,13 @@ import {
 } from 'gql-schema-builder'
 import { AuthenticationError } from 'apollo-server-micro'
 import gql from 'graphql-tag'
-import { SchemaDirectiveVisitor } from 'graphql-tools'
+import {
+  SchemaDirectiveVisitor,
+  VisitableSchemaType,
+} from 'graphql-tools/dist/schemaVisitor'
+import { GraphQLSchema } from 'graphql'
 import GraphQLJSON, { GraphQLJSONObject } from 'graphql-type-json'
+import { union } from 'lodash'
 import {
   GraphQLList,
   GraphQLString,
@@ -20,68 +25,64 @@ import {
   defaultFieldResolver,
 } from 'graphql'
 
-const ID = new Scalar({
+export const ID = new Scalar({
   schema: gql`
     scalar ID
   `,
   // resolver: GraphQLString,
 })
-const UID = new Scalar({
+export const UID = new Scalar({
   schema: gql`
     scalar UID
   `,
   // resolver: GraphQLString,
 })
-const DateSchema = new Scalar({
+export const DateSchema = new Scalar({
   schema: gql`
     scalar Date
   `,
   // resolver: GraphQLString,
 })
-const Url = new Scalar({
+export const Url = new Scalar({
   schema: gql`
     scalar Url
   `,
   // resolver: GraphQLString,
 })
-const Token = new Scalar({
+export const Token = new Scalar({
   schema: gql`
     scalar Token
   `,
   // resolver: GraphQLString,
 })
-const JSONScalar = new Scalar({
+export const JSONScalar = new Scalar({
   schema: gql`
     scalar JSON
   `,
   resolver: GraphQLJSON,
 })
 
-const JSONObjectScalar = new Scalar({
+export const JSONObjectScalar = new Scalar({
   schema: gql`
     scalar JSONObject
   `,
   resolver: GraphQLJSONObject,
 })
 
-const Acl = new Enum(gql`
+export const Acl = new Enum(gql`
   enum Acl {
     AUTHENTICATED
     ADMIN
-    STUDENT
-    CAPITAN
-    CURATOR
-    OWNER
   }
 `)
 
-const acl = new Directive(
+export const acl = new Directive(
   gql`
     directive @acl(level: [Acl] = [AUTHENTICATED]) on OBJECT | FIELD_DEFINITION
   `,
 )
 
-const storage = new Directive(gql`
+export const storage = new Directive(gql`
   directive @storage(
     identity: Boolean
     indexed: Boolean
@@ -89,11 +90,11 @@ const storage = new Directive(gql`
   ) on FIELD_DEFINITION
 `)
 
-const entry = new Directive(gql`
+export const entry = new Directive(gql`
   directive @entry(calculated: Boolean) on OBJECT
 `)
 
-const RelationType = new Enum(gql`
+export const RelationType = new Enum(gql`
   enum RelationType {
     BTM
     BTO
@@ -102,7 +103,7 @@ const RelationType = new Enum(gql`
   }
 `)
 
-const relation = new Directive(gql`
+export const relation = new Directive(gql`
   directive @relation(
     type: RelationType
     to: String
@@ -111,7 +112,7 @@ const relation = new Directive(gql`
   ) on FIELD_DEFINITION
 `)
 
-const UI = new Directive(gql`
+export const UI = new Directive(gql`
   directive @UI(
     title: String
     titlePlural: String
@@ -123,7 +124,7 @@ const UI = new Directive(gql`
   ) on OBJECT | FIELD_DEFINITION
 `)
 
-const UserClaim = new Type(gql`
+export const UserClaim = new Type(gql`
   type UserClaim {
     admin: Boolean
     student: Boolean
@@ -133,7 +134,7 @@ const UserClaim = new Type(gql`
   }
 `)
 
-const UserClaimInput = new Input(gql`
+export const UserClaimInput = new Input(gql`
   input UserClaimInput {
     admin: Boolean
     student: Boolean
@@ -143,7 +144,7 @@ const UserClaimInput = new Input(gql`
   }
 `)
 
-const FireBaseUserInfo = new Type(gql`
+export const FireBaseUserInfo = new Type(gql`
   type FireBaseUserInfo {
     displayName: String
     email: String
@@ -154,14 +155,14 @@ const FireBaseUserInfo = new Type(gql`
   }
 `)
 
-const FireBaseUserMetadata = new Type(gql`
+export const FireBaseUserMetadata = new Type(gql`
   type FireBaseUserMetadata {
     creationTime: String
     lastSignInTime: String
   }
 `)
 
-const FireBaseUser = new Type({
+export const FireBaseUser = new Type({
   schema: gql`
     type FireBaseUser {
       displayName: String
@@ -184,7 +185,7 @@ const FireBaseUser = new Type({
   },
 })
 
-const FirebaseUserCreate = new Input(
+export const FirebaseUserCreate = new Input(
   gql`
     input FirebaseUserCreate {
       # The uid to assign to the newly created user.Must be a string between 1 and 128 characters long, inclusive.If not provided, a random uid will be automatically generated.
@@ -208,7 +209,7 @@ const FirebaseUserCreate = new Input(
   `,
 )
 
-const FirebaseUserUpdate = new Input(
+export const FirebaseUserUpdate = new Input(
   gql`
     input FirebaseUserUpdate {
       #	The user's primary email. Must be a valid email address.
@@ -230,7 +231,7 @@ const FirebaseUserUpdate = new Input(
   `,
 )
 
-const AppUserList = new Type(
+export const AppUserList = new Type(
   gql`
     type AppUserList {
       users: [FireBaseUser]
@@ -239,9 +240,9 @@ const AppUserList = new Type(
   `,
 )
 
-const getAppUser = new Query({
+export const getAppUser = new Query({
   schema: gql`
-    type Query {
+    extend type Query {
       getAppUser(uid: UID): FireBaseUser @acl(level: ADMIN)
     }
   `,
@@ -250,9 +251,9 @@ const getAppUser = new Query({
   },
 })
 
-const getAppUsers = new Query({
+export const getAppUsers = new Query({
   schema: gql`
-    type Query {
+    extend type Query {
       getAppUsers(limit: Int, pageToken: String): AppUserList @acl(level: ADMIN)
     }
   `,
@@ -267,7 +268,7 @@ const getAppUsers = new Query({
   },
 })
 
-const LoginResult = new Type({
+export const LoginResult = new Type({
   schema: gql`
     type LoginResult {
       token: Token!
@@ -285,9 +286,9 @@ const LoginResult = new Type({
   },
 })
 
-const login = new Mutation({
+export const login = new Mutation({
   schema: gql`
-    type Mutation {
+    extend type Mutation {
       login(username: String, password: String): LoginResult
     }
   `,
@@ -305,10 +306,10 @@ const login = new Mutation({
       })),
 })
 
-const refreshToken = new Mutation({
+export const refreshToken = new Mutation({
   schema: gql`
-    type Mutation {
-      refreshToken(token: Token): LoginResult
+    extend type Mutation {
+      refreshToken(token: Token): LoginResult @acl
     }
   `,
   // https://firebase.google.com/docs/reference/rest/auth/
@@ -320,6 +321,7 @@ const refreshToken = new Mutation({
     })
       .then((r) => r.json())
       .then((r) => {
+        console.log(r)
         return {
           token: r.access_token,
           refreshToken: r.refresh_token,
@@ -328,9 +330,9 @@ const refreshToken = new Mutation({
       }),
 })
 
-const verifyToken = new Mutation({
+export const verifyToken = new Mutation({
   schema: gql`
-    type Mutation {
+    extend type Mutation {
       verifyToken(
         token: Token
         refreshToken: Token
@@ -350,9 +352,9 @@ const verifyToken = new Mutation({
       ),
 })
 
-const deleteAppUser = new Mutation({
+export const deleteAppUser = new Mutation({
   schema: gql`
-    type Mutation {
+    extend type Mutation {
       deleteAppUser(uid: UID): Boolean @acl(level: ADMIN)
     }
   `,
@@ -364,9 +366,9 @@ const deleteAppUser = new Mutation({
   },
 })
 
-const createAppUser = new Mutation({
+export const createAppUser = new Mutation({
   schema: gql`
-    type Mutation {
+    extend type Mutation {
       createAppUser(user: FirebaseUserCreate): FireBaseUser @acl(level: ADMIN)
     }
   `,
@@ -387,9 +389,9 @@ const createAppUser = new Mutation({
     return result
   },
 })
-const updateAppUser = new Mutation({
+export const updateAppUser = new Mutation({
   schema: gql`
-    type Mutation {
+    extend type Mutation {
       updateAppUser(uid: UID, user: FirebaseUserUpdate): FireBaseUser
         @acl(level: ADMIN)
     }
@@ -442,13 +444,26 @@ export const FirebaseAdmin = new Schema({
 })
 
 export class AclDirective extends SchemaDirectiveVisitor {
+  // checkPermissions: (
+  //   permissions: Array<string>,
+  //   context: {
+  //     [key: string]: any
+  //   },
+  // ) => boolean
   visitObject(type) {
-    type._acl = this.args.level
+    type._acl = this.args?.level
+      ? Array.isArray(this.args.level)
+        ? this.args.level
+        : [this.args.level]
+      : ['AUTHENTICATED']
     this.ensureWrapped(type)
   }
-  visitSchemaDirectives
   visitFieldDefinition(field, details) {
-    field._acl = this.args.level
+    field._acl = this.args?.level
+      ? Array.isArray(this.args.level)
+        ? this.args.level
+        : [this.args.level]
+      : ['AUTHENTICATED']
     this.ensureWrapped(details.objectType)
   }
   ensureWrapped(objectType) {
@@ -459,26 +474,23 @@ export class AclDirective extends SchemaDirectiveVisitor {
       const field = fields[fieldName]
       const { resolve = defaultFieldResolver } = field
       field.resolve = async (...args) => {
-        // Get the required Role from the field first, falling back
-        // to the objectType if no Role is required by the field:
-        const requiredRole = field._acl || objectType._acl
-
-        if (!requiredRole) {
-          return resolve.apply(this, args)
-        }
-
+        const objectAcl = objectType._acl
+          ? Array.isArray(objectType._acl)
+            ? objectType._acl
+            : [objectType._acl]
+          : []
+        const fieldAcl: Array<string> = field._acl
+          ? Array.isArray(field._acl)
+            ? field._acl
+            : [field._acl]
+          : []
+        const acl = union(objectAcl, fieldAcl)
         const context = args[2]
-        switch (requiredRole) {
-          case 'ADMIN':
-            if (!context?.user?.options?.admin) {
-              throw new AuthenticationError('not allowed to access')
-            }
-            break
-          case 'AUTHENTICATED':
-            if (!context?.user) {
-              throw new AuthenticationError('not allowed to access')
-            }
-            break
+        try {
+          const allowed = context.checkPermissions(acl, context)
+          if (!allowed) throw new AuthenticationError('not allowed to access')
+        } catch (e) {
+          throw e
         }
         return resolve.apply(this, args)
       }
@@ -491,8 +503,7 @@ export class AclDirective extends SchemaDirectiveVisitor {
       // better to modify it than to return a new GraphQLDirective object.
       previousDirective.args.forEach((arg) => {
         if (arg.name === 'level') {
-          // Lower the default minimum Role from ADMIN to REVIEWER.
-          arg.defaultValue = 'AUTHENTICATED'
+          arg.defaultValue = ['AUTHENTICATED']
         }
       })
 
