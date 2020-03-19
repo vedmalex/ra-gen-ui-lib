@@ -55,5 +55,6 @@
   },
   "peerDependencies": {
     "graphql": "14.6.0"
-  }
+  },
+  "gitHead": "ef0fa33d54101ca9c7c7a450fc6b7fc802a2c327"
 }
