@@ -130,7 +130,7 @@ type LoginResult {
 
 type Mutation {
   login(username: String, password: String): LoginResult
-  refreshToken(token: Token): LoginResult
+  refreshToken(token: Token): LoginResult @acl
   verifyToken(token: Token, refreshToken: Token, checkRevoked: Boolean): UserClaim
   deleteAppUser(uid: UID): Boolean @acl(level: ADMIN)
   createAppUser(user: FirebaseUserCreate): FireBaseUser @acl(level: ADMIN)

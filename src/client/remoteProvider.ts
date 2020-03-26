@@ -1,20 +1,21 @@
 import ApolloClient from 'apollo-boost'
 import gql from 'graphql-tag'
 import { set, get, pick, flattenDeep } from 'lodash'
-import {
-  GetListParams,
-  GetOneParams,
-  GetManyParams,
-  GetManyReferenceParams,
-  UpdateParams,
-  UpdateManyParam,
-  DeleteParams,
-  DeleteManyParams,
-  CreateParams,
-} from './params'
+import {} from './params'
 import omitDeep from 'omit-deep'
 import { ResourceConfig, UploadFile, getImageSize } from './dataProviderV3'
-
+import {
+  DataProvider,
+  UpdateParams,
+  GetListParams,
+  DeleteParams,
+  GetOneParams,
+  GetManyParams,
+  UpdateManyParams,
+  DeleteManyParams,
+  CreateParams,
+  GetManyReferenceParams,
+} from 'ra-core'
 const emptyListResult = {
   data: [],
   total: 0,
@@ -27,7 +28,7 @@ const emptyResult = {
 
 async function upload(
   fieldName: string,
-  submittedData: UpdateManyParam | CreateParams | UpdateParams,
+  submittedData: UpdateManyParams | CreateParams | UpdateParams,
 ) {
   const data = get(submittedData.data, fieldName)
   if (data) {
@@ -87,7 +88,7 @@ export default (
   client: ApolloClient<unknown>,
   fragments,
   trackedResources: Array<ResourceConfig>,
-) => {
+): DataProvider => {
   debugger
   const uploads = trackedResources.reduce((res, cur) => {
     res[cur.name] = cur.uploadFields
@@ -115,7 +116,7 @@ export default (
   }
 
   return {
-    getList: (resource: string, params: GetListParams) =>
+    getList: async (resource: string, params: GetListParams) =>
       client
         .query({
           query: gql` query getList${
@@ -250,7 +251,7 @@ export default (
           ),
         })
         .then((r) => ({ ...r.data[`update${resourceToTypeName[resource]}`] })),
-    updateMany: async (resource: string, params: UpdateManyParam) =>
+    updateMany: async (resource: string, params: UpdateManyParams) =>
       client
         .mutate({
           mutation: gql` mutation updateMany${
@@ -292,18 +293,7 @@ export default (
               }
               ${fragments[resourceToTypeName[resource]].query(fragments)}
               `,
-          variables: await prepareFiles(
-            resource,
-            omitDeep(
-              {
-                ...params,
-                previousData: saveFilter[resourceToTypeName[resource]](
-                  params.previousData,
-                ),
-              },
-              '__typename',
-            ),
-          ),
+          variables: await prepareFiles(resource, { id: params.id }),
         })
         .then((r) => ({ ...r.data[`delete${resourceToTypeName[resource]}`] })),
     deleteMany: (resource: string, params: DeleteManyParams) =>
