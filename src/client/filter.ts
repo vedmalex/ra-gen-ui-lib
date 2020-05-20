@@ -269,12 +269,12 @@ export function makeFilter(args) {
   }
 }
 export function filterQuery(
-  query: firebase.firestore.Query,
+  query: firebase.firestore.Query<firebase.firestore.DocumentData>,
   filter: {
     [filter: string]: any
   },
-): firebase.firestore.Query {
-  let result: firebase.firestore.Query = query
+): firebase.firestore.Query<firebase.firestore.DocumentData> {
+  let result: firebase.firestore.Query<firebase.firestore.DocumentData> = query
   Object.keys(filter).forEach((key) => {
     const [field, op] = key.split('-')
     switch (op) {

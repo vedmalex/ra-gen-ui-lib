@@ -21,6 +21,7 @@ const log = debug('ra-data-firestore')
 export interface ResourceConfig {
   name: string
   path: string
+  resource: string
   filter?: JSON
   isPublic?: boolean
   uploadFields: Array<string>
@@ -134,6 +135,7 @@ export default class {
         resource = {
           name: resource,
           path: resource,
+          resource,
           uploadFields: [],
           saveFilter: {},
           readFilter: {},
@@ -263,6 +265,10 @@ export default class {
   }
   async getOne(resource: string, params: GetOneParams) {
     if (params.id) {
+      const resourceConfig = this.trackedResources[
+        this.trackedResourcesIndex[resource]
+      ]
+
       const result = await this.firestore
         .collection(this.resourcesPaths[resource])
         .doc(params.id.toString())
@@ -270,12 +276,15 @@ export default class {
 
       if (result.exists) {
         const data = result.data()
-
-        if (data && data.id == null) {
-          data['id'] = result.id
-        }
-        return {
-          data: this.firebaseGetFilter(data, resource),
+        if (resourceConfig.filter && !makeFilter(resourceConfig.filter)(data)) {
+          throw new Error('Id not found')
+        } else {
+          if (data && data.id == null) {
+            data['id'] = result.id
+          }
+          return {
+            data: this.firebaseGetFilter(data, resource),
+          }
         }
       } else {
         throw new Error('Id not found')
@@ -287,17 +296,25 @@ export default class {
 
   async getMany(resource: string, params: GetManyParams) {
     debugger
+    const resourceConfig = this.trackedResources[
+      this.trackedResourcesIndex[resource]
+    ]
     const data = []
+
     for await (const items of sliceArray(params.ids, 10)) {
+      let query: firebase.firestore.Query<firebase.firestore.DocumentData> = this.firestore.collection(
+        this.resourcesPaths[resource],
+      )
+      if (resourceConfig.filter) {
+        query = filterQuery(query, resourceConfig.filter)
+      }
       data.push(
-        ...(
-          await this.firestore
-            .collection(this.resourcesPaths[resource])
-            .where('id', 'in', items)
-            .get()
-        ).docs.map((d) => d.data()),
+        ...(await query.where('id', 'in', items).get()).docs.map((d) =>
+          d.data(),
+        ),
       )
     }
+
     return {
       data: data.map((d) => this.firebaseGetFilter(d, resource)),
     }
@@ -438,6 +455,9 @@ export default class {
   }
 
   async update(resource: string, params: UpdateParams) {
+    const resourceConfig = this.trackedResources[
+      this.trackedResourcesIndex[resource]
+    ]
     const itemId = this._getItemID(resource, params)
 
     const item = await this.firestore
@@ -446,6 +466,15 @@ export default class {
       .get()
 
     const currentData = item.exists ? { ...item.data(), id: item.id } : {}
+
+    if (
+      item.exists &&
+      resourceConfig.filter &&
+      !makeFilter(resourceConfig.filter)(item.data())
+    ) {
+      throw new Error('saving document problem')
+    }
+
     const data =
       item.exists && params.previousData
         ? getDiffObject(params.previousData, params.data) ?? currentData

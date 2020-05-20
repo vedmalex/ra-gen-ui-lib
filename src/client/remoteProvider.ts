@@ -96,7 +96,7 @@ export default (
   }, {})
 
   const resourceToTypeName = trackedResources.reduce((res, cur) => {
-    res[cur.path] = cur.name
+    res[cur.resource] = cur.name
     return res
   }, {})
 
